@@ -281,6 +281,114 @@ class IndoorPairDataset(PairDataset):
 
     return (xyz0, xyz1, coords0, coords1, feats0, feats1, matches, trans)
 
+class ZividDataset(PairDataset):
+  OVERLAP_RATIO = None
+  AUGMENT = None
+
+  def __init__(self,
+               phase,
+               transform=None,
+               random_rotation=True,
+               random_scale=True,
+               manual_seed=False,
+               config=None):
+    PairDataset.__init__(self, phase, transform, random_rotation, random_scale,
+                         manual_seed, config)
+    self.root = root = config.zivid_dataset_dir
+    logging.info(f"Loading the subset {phase} from {root}")
+
+    subset_names = open(self.DATA_FILES[phase]).read().split()
+    for name in subset_names:
+      fname = name + ".txt"
+      fnames_txt = glob.glob(root + "/" + fname)
+      assert len(fnames_txt) > 0, f"Make sure that the path {root} has data {fname}"
+      for fname_txt in fnames_txt:
+        with open(fname_txt) as f:
+          content = f.readlines()
+        fnames = [x.strip().split() for x in content]
+        for fname in fnames:
+          self.files.append([fname[0], fname[1]])
+
+  def __getitem__(self, idx):
+    file0 = os.path.join(self.root, self.files[idx][0])
+    file1 = os.path.join(self.root, self.files[idx][1])
+    data0 = np.load(file0)
+    data1 = np.load(file1)
+
+    #Dividing by 1000 to convert mm to m 
+    #TODO Moved this to preprocessor program
+
+    xyz0 = np.nan_to_num(data0["pcd"])
+    xyz1 = np.nan_to_num(data1["pcd"])
+    try:
+      color0 = data0["rgb"]
+      color1 = data1["rgb"]
+    except:
+      None
+
+    matching_search_voxel_size = self.matching_search_voxel_size
+
+    if self.random_scale and random.random() < 0.95:
+      scale = self.min_scale + \
+          (self.max_scale - self.min_scale) * random.random()
+      matching_search_voxel_size *= scale
+      xyz0 = scale * xyz0
+      xyz1 = scale * xyz1
+
+    if self.random_rotation:
+      T0 = sample_random_trans(xyz0, self.randg, self.rotation_range)
+      T1 = sample_random_trans(xyz1, self.randg, self.rotation_range)
+      trans = T1 @ np.linalg.inv(T0)
+
+      xyz0 = self.apply_transform(xyz0, T0)
+      xyz1 = self.apply_transform(xyz1, T1)
+    else:
+      trans = np.identity(4)
+
+    # Voxelization
+    _, sel0 = ME.utils.sparse_quantize(xyz0 / self.voxel_size, return_index=True)
+    _, sel1 = ME.utils.sparse_quantize(xyz1 / self.voxel_size, return_index=True)
+
+    # Make point clouds using voxelized points
+    pcd0 = make_open3d_point_cloud(xyz0)
+    pcd1 = make_open3d_point_cloud(xyz1)
+
+    # Select features and points using the returned voxelized indices
+    try:
+      pcd0.colors = o3d.utility.Vector3dVector(color0[sel0])
+      pcd1.colors = o3d.utility.Vector3dVector(color1[sel1])
+    except:
+      None
+
+    pcd0.points = o3d.utility.Vector3dVector(np.array(pcd0.points)[sel0])
+    pcd1.points = o3d.utility.Vector3dVector(np.array(pcd1.points)[sel1])
+    # Get matches
+    matches = get_matching_indices(pcd0, pcd1, trans, matching_search_voxel_size)
+
+    # Get features
+    npts0 = len(pcd0.points)
+    npts1 = len(pcd1.points)
+
+    feats_train0, feats_train1 = [], []
+
+    feats_train0.append(np.ones((npts0, 1)))
+    feats_train1.append(np.ones((npts1, 1)))
+
+    feats0 = np.hstack(feats_train0)
+    feats1 = np.hstack(feats_train1)
+
+    # Get coords
+    xyz0 = np.array(pcd0.points)
+    xyz1 = np.array(pcd1.points)
+
+    coords0 = np.floor(xyz0 / self.voxel_size)
+    coords1 = np.floor(xyz1 / self.voxel_size)
+
+    if self.transform:
+      coords0, feats0 = self.transform(coords0, feats0)
+      coords1, feats1 = self.transform(coords1, feats1)
+
+    return (xyz0, xyz1, coords0, coords1, feats0, feats1, matches, trans)
 
 class KITTIPairDataset(PairDataset):
   AUGMENT = None
@@ -633,7 +741,19 @@ class ThreeDMatchPairDataset(IndoorPairDataset):
   }
 
 
-ALL_DATASETS = [ThreeDMatchPairDataset, KITTIPairDataset, KITTINMPairDataset]
+# Zivid scans dataset files
+
+class ZividScansPairDataset(ZividDataset):
+  OVERLAP_RATIO = 0.0
+  DATA_FILES = {
+      'train': '/cluster/home/jonassaa/jobs/ZividDataset/trainZivid.txt',
+      'val': '/cluster/home/jonassaa/jobs/ZividDataset/valZivid.txt',
+      'test': './config/test_zivid.txt'
+  }
+
+
+
+ALL_DATASETS = [ThreeDMatchPairDataset, KITTIPairDataset, KITTINMPairDataset, ZividScansPairDataset]
 dataset_str_mapping = {d.__name__: d for d in ALL_DATASETS}
 
 

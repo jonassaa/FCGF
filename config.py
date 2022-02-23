@@ -20,7 +20,7 @@ logging_arg.add_argument('--out_dir', type=str, default='outputs')
 trainer_arg = add_argument_group('Trainer')
 trainer_arg.add_argument('--trainer', type=str, default='HardestContrastiveLossTrainer')
 trainer_arg.add_argument('--save_freq_epoch', type=int, default=1)
-trainer_arg.add_argument('--batch_size', type=int, default=4)
+trainer_arg.add_argument('--batch_size', type=int, default=8)
 trainer_arg.add_argument('--val_batch_size', type=int, default=1)
 
 # Hard negative mining
@@ -65,7 +65,7 @@ trainer_arg.add_argument('--triplet_num_rand', type=int, default=1024)
 net_arg = add_argument_group('Network')
 net_arg.add_argument('--model', type=str, default='ResUNetBN2C')
 net_arg.add_argument('--model_n_out', type=int, default=32, help='Feature dimension')
-net_arg.add_argument('--conv1_kernel_size', type=int, default=5)
+net_arg.add_argument('--conv1_kernel_size', type=int, default=7)
 net_arg.add_argument('--normalize_feature', type=str2bool, default=True)
 net_arg.add_argument('--dist_type', type=str, default='L2')
 net_arg.add_argument('--best_val_metric', type=str, default='feat_match_ratio')
@@ -107,9 +107,11 @@ misc_arg.add_argument(
 # Dataset specific configurations
 data_arg = add_argument_group('Data')
 data_arg.add_argument('--dataset', type=str, default='ThreeDMatchPairDataset')
-data_arg.add_argument('--voxel_size', type=float, default=0.025)
+data_arg.add_argument('--voxel_size', type=float, default=0.05)
 data_arg.add_argument(
     '--threed_match_dir', type=str, default="/home/chrischoy/datasets/FCGF/threedmatch")
+data_arg.add_argument(
+    '--zivid_dataset_dir', type=str, default="/cluster/home/jonassaa/jobs/DummyDatasetZivid/")
 data_arg.add_argument(
     '--kitti_root', type=str, default="/home/chrischoy/datasets/FCGF/kitti/")
 data_arg.add_argument(

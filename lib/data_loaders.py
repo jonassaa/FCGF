@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 #
 # Written by Chris Choy <chrischoy@ai.stanford.edu>
 # Distributed under MIT License
@@ -315,11 +314,16 @@ class ZividDataset(PairDataset):
     data0 = np.load(file0)
     data1 = np.load(file1)
 
+
     #Dividing by 1000 to convert mm to m 
     #TODO Moved this to preprocessor program
 
-    xyz0 = np.nan_to_num(data0["pcd"])
-    xyz1 = np.nan_to_num(data1["pcd"])
+    #xyz0 = np.nan_to_num(data0["pcd"])*1000
+    xyz0 = data0["pcd"][~np.isnan(data0["pcd"]).any(axis=1), :]
+    #xyz1 = np.nan_to_num(data1["pcd"])*1000
+    xyz1 = data1["pcd"][~np.isnan(data1["pcd"]).any(axis=1), :]
+
+
     try:
       color0 = data0["rgb"]
       color1 = data1["rgb"]
@@ -743,17 +747,17 @@ class ThreeDMatchPairDataset(IndoorPairDataset):
 
 # Zivid scans dataset files
 
-class ZividScansPairDataset(ZividDataset):
+class ZividPairDataset(ZividDataset):
   OVERLAP_RATIO = 0.0
   DATA_FILES = {
-      'train': '/cluster/home/jonassaa/jobs/ZividDataset/trainZivid.txt',
-      'val': '/cluster/home/jonassaa/jobs/ZividDataset/valZivid.txt',
+      'train': '/cluster/home/jonassaa/jobs/ZividOne_v1/trainZivid.txt',
+      'val': '/cluster/home/jonassaa/jobs/ZividOne_v1/valZivid.txt',
       'test': './config/test_zivid.txt'
   }
 
 
 
-ALL_DATASETS = [ThreeDMatchPairDataset, KITTIPairDataset, KITTINMPairDataset, ZividScansPairDataset]
+ALL_DATASETS = [ThreeDMatchPairDataset, KITTIPairDataset, KITTINMPairDataset, ZividPairDataset]
 dataset_str_mapping = {d.__name__: d for d in ALL_DATASETS}
 
 

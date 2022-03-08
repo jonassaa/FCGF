@@ -1,5 +1,3 @@
-# -*- coding: future_fstrings -*-
-#
 # Written by Chris Choy <chrischoy@ai.stanford.edu>
 # Distributed under MIT License
 import os
@@ -63,6 +61,7 @@ class AlignmentTrainer:
     self.best_val_epoch = -np.inf
     self.best_val = -np.inf
 
+
     if config.use_gpu and not torch.cuda.is_available():
       logging.warning('Warning: There\'s no CUDA support on this machine, '
                       'training is performed on CPU.')
@@ -122,12 +121,11 @@ class AlignmentTrainer:
     if self.test_valid:
       with torch.no_grad():
         val_dict = self._valid_epoch()
-
       for k, v in val_dict.items():
         self.writer.add_scalar(f'val/{k}', v, 0)
-
+    
     for epoch in range(self.start_epoch, self.max_epoch + 1):
-      lr = self.scheduler.get_lr()
+      lr = self.scheduler.get_last_lr()
       logging.info(f" Epoch: {epoch}, LR: {lr}")
       self._train_epoch(epoch)
       self._save_checkpoint(epoch)
@@ -145,7 +143,7 @@ class AlignmentTrainer:
           )
           self.best_val = val_dict[self.best_val_metric]
           self.best_val_epoch = epoch
-          self._save_checkpoint(epoch, 'best_val_checkpoint')
+          self._save_checkpoint(epoch, f'best_val_checkpoint_HRT_{self.config.hit_ratio_thresh}')
         else:
           logging.info(
               f'Current best val model with {self.best_val_metric}: {self.best_val} at epoch {self.best_val_epoch}'
@@ -303,6 +301,7 @@ class ContrastiveLossTrainer(AlignmentTrainer):
     num_data = 0
     hit_ratio_meter, feat_match_ratio, loss_meter, rte_meter, rre_meter = AverageMeter(
     ), AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
+
     data_timer, feat_timer, matching_timer = Timer(), Timer(), Timer()
     tot_num_data = len(self.val_data_loader.dataset)
     if self.val_max_iter > 0:

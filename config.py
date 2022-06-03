@@ -25,7 +25,7 @@ trainer_arg.add_argument('--val_batch_size', type=int, default=1)
 
 # Hard negative mining
 trainer_arg.add_argument('--use_hard_negative', type=str2bool, default=True)
-trainer_arg.add_argument('--hard_negative_sample_ratio', type=int, default=0.05)
+trainer_arg.add_argument('--hard_negative_sample_ratio', type=float, default=0.05)
 trainer_arg.add_argument('--hard_negative_max_num', type=int, default=3000)
 trainer_arg.add_argument('--num_pos_per_batch', type=int, default=1024)
 trainer_arg.add_argument('--num_hn_samples_per_batch', type=int, default=256)
@@ -106,12 +106,12 @@ misc_arg.add_argument(
 
 # Dataset specific configurations
 data_arg = add_argument_group('Data')
-data_arg.add_argument('--dataset', type=str, default='ThreeDMatchPairDataset')
-data_arg.add_argument('--voxel_size', type=float, default=0.05)
+data_arg.add_argument('--dataset', type=str, default='ZividPairDataset')
+data_arg.add_argument('--voxel_size', type=float, default=0.001)
 data_arg.add_argument(
     '--threed_match_dir', type=str, default="/home/chrischoy/datasets/FCGF/threedmatch")
 data_arg.add_argument(
-    '--zivid_dataset_dir', type=str, default="/cluster/home/jonassaa/jobs/DummyDatasetZivid/")
+    '--zivid_dataset_dir', type=str, default="/cluster/home/jonassaa/jobs/ZividOne_v2/")
 data_arg.add_argument(
     '--kitti_root', type=str, default="/home/chrischoy/datasets/FCGF/kitti/")
 data_arg.add_argument(
@@ -121,6 +121,9 @@ data_arg.add_argument(
     help='max time difference between pairs (non inclusive)')
 data_arg.add_argument('--kitti_date', type=str, default='2011_09_26')
 
+
+gpu_arg = add_argument_group('GPU')
+gpu_arg.add_argument("--n_gpu",type=int,default=2)
 
 def get_config():
   args = parser.parse_args()

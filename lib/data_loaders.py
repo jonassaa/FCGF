@@ -314,15 +314,8 @@ class ZividDataset(PairDataset):
     data0 = np.load(file0)
     data1 = np.load(file1)
 
-
-    #Dividing by 1000 to convert mm to m 
-    #TODO Moved this to preprocessor program
-
-    #xyz0 = np.nan_to_num(data0["pcd"])*1000
     xyz0 = data0["pcd"][~np.isnan(data0["pcd"]).any(axis=1), :]
-    #xyz1 = np.nan_to_num(data1["pcd"])*1000
     xyz1 = data1["pcd"][~np.isnan(data1["pcd"]).any(axis=1), :]
-
 
     try:
       color0 = data0["rgb"]
